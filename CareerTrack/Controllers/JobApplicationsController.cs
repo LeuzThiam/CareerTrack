@@ -80,9 +80,17 @@ public class JobApplicationsController : Controller
             .OrderBy(f => f.ScheduledAt)
             .ToListAsync(cancellationToken);
 
+        List<Interview> interviews = await _context.Interviews
+            .AsNoTracking()
+            .Where(i => i.ApplicationId == application.Id)
+            .OrderBy(i => i.ScheduledAt)
+            .ToListAsync(cancellationToken);
+
         ViewData["ChangeStatus"] = changeStatusModel;
         ViewData["FollowUps"] = followUps;
         ViewData["NewFollowUp"] = new FollowUpFormViewModel { ApplicationId = application.Id };
+        ViewData["Interviews"] = interviews;
+        ViewData["NewInterview"] = new InterviewFormViewModel { ApplicationId = application.Id };
 
         return View(application);
     }

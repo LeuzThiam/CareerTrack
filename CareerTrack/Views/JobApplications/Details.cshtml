@@ -6,6 +6,9 @@
     var followUps = (List<FollowUp>)ViewData["FollowUps"]!;
     var newFollowUp = (FollowUpFormViewModel)ViewData["NewFollowUp"]!;
     var followUpError = TempData["FollowUpError"] as string;
+    var interviews = (List<Interview>)ViewData["Interviews"]!;
+    var newInterview = (InterviewFormViewModel)ViewData["NewInterview"]!;
+    var interviewError = TempData["InterviewError"] as string;
 }
 
 <h1>@Model.JobTitle</h1>
@@ -166,6 +169,88 @@ else
     <div class="col-auto">
         <label class="form-label">Notes</label>
         <input type="text" name="Notes" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Planifier</button>
+    </div>
+</form>
+
+<hr />
+
+<h3>Entrevues</h3>
+
+@if (!string.IsNullOrEmpty(interviewError))
+{
+    <div class="alert alert-danger">@interviewError</div>
+}
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Statut</th>
+            <th>Résultat</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var interview in interviews)
+        {
+            <tr>
+                <td>@interview.Type</td>
+                <td>@interview.ScheduledAt.ToLocalTime()</td>
+                <td>@interview.Status</td>
+                <td>@interview.Result</td>
+                <td>
+                    @if (interview.Status is CareerTrack.Models.Enums.InterviewStatus.Scheduled or CareerTrack.Models.Enums.InterviewStatus.Rescheduled)
+                    {
+                        <form asp-controller="Interviews" asp-action="Complete" method="post" class="d-inline">
+                            <input type="hidden" name="InterviewId" value="@interview.Id" />
+                            <input type="hidden" name="ApplicationId" value="@Model.Id" />
+                            <input type="hidden" name="Status" value="2" />
+                            <input type="text" name="Result" class="form-control form-control-sm d-inline w-auto" placeholder="Résultat" />
+                            <button type="submit" class="btn btn-sm btn-outline-success">Marquer terminée</button>
+                        </form>
+                        <form asp-controller="Interviews" asp-action="Cancel" method="post" class="d-inline"
+                              onsubmit="return confirm('Annuler cette entrevue ?');">
+                            <input type="hidden" name="interviewId" value="@interview.Id" />
+                            <input type="hidden" name="applicationId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!interviews.Any())
+        {
+            <tr><td colspan="5" class="text-muted">Aucune entrevue planifiée.</td></tr>
+        }
+    </tbody>
+</table>
+
+<h5>Planifier une entrevue</h5>
+<form asp-controller="Interviews" asp-action="Create" method="post" class="row g-2 align-items-end mb-4" style="max-width: 900px;">
+    <input type="hidden" name="ApplicationId" value="@newInterview.ApplicationId" />
+    <div class="col-auto">
+        <label class="form-label">Type</label>
+        <select name="Type" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.InterviewType>()"></select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Date et heure</label>
+        <input type="datetime-local" name="ScheduledAt" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Durée (min)</label>
+        <input type="number" name="DurationMinutes" class="form-control" style="width: 100px;" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Lieu</label>
+        <input type="text" name="Location" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Lien visio</label>
+        <input type="text" name="MeetingUrl" class="form-control" />
     </div>
     <div class="col-auto">
         <button type="submit" class="btn btn-primary">Planifier</button>

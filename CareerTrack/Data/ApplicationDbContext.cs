@@ -18,6 +18,7 @@ public class ApplicationDbContext
     public DbSet<JobApplication> Applications => Set<JobApplication>();
     public DbSet<ApplicationStatusHistory> ApplicationStatusHistories => Set<ApplicationStatusHistory>();
     public DbSet<FollowUp> FollowUps => Set<FollowUp>();
+    public DbSet<Interview> Interviews => Set<Interview>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
