@@ -10,18 +10,18 @@ Une personne en recherche d'emploi utilise souvent plusieurs sources (Indeed, Li
 
 > Comment construire une application web sécurisée permettant de centraliser, suivre et analyser toutes les étapes d'une recherche d'emploi ?
 
-## Fonctionnalités prévues
+## Fonctionnalités
 
-- Création de compte et connexion sécurisée
-- Enregistrement des offres d'emploi et des candidatures envoyées
-- Suivi des changements de statut avec historique complet
-- Planification et suivi des relances
+- Création de compte et connexion sécurisée (ASP.NET Core Identity)
+- Gestion des entreprises, offres d'emploi et candidatures
+- Suivi des changements de statut avec historique complet et transitions contrôlées
+- Planification et suivi des relances (annulées automatiquement quand une candidature devient terminale)
 - Gestion des entrevues (type, date, préparation, compte rendu, résultat)
 - Gestion des contacts professionnels (recruteurs, gestionnaires)
-- Pièces jointes (CV, lettres, documents)
-- Tableau de bord avec indicateurs (taux de réponse, d'entrevue, de conversion...)
-- Recherche, filtrage et tri des candidatures
-- Export des données (CSV / Excel)
+- Téléversement sécurisé de documents (CV, lettres) hors de `wwwroot`
+- Tableau de bord avec KPI, indicateurs et graphiques
+- Recherche, filtrage, tri et pagination des candidatures
+- Export CSV et API REST en lecture seule
 - Isolation complète des données par utilisateur
 
 ## Utilisateurs
@@ -32,86 +32,122 @@ Une personne en recherche d'emploi utilise souvent plusieurs sources (Indeed, Li
 
 ## Règles métier principales
 
-- Un utilisateur ne peut consulter que ses propres données
+- Un utilisateur ne peut consulter que ses propres données (isolation stricte sur toutes les requêtes)
 - Une candidature doit être associée à une entreprise et posséder un titre de poste
 - Chaque changement de statut crée une entrée dans l'historique
 - Les transitions de statut invalides sont bloquées (ex. `ToApply → OfferAccepted`)
+- Une candidature au statut terminal ne peut plus générer de relance ; ses relances en attente sont annulées automatiquement
 - Suppression logique plutôt que définitive (archivage)
-- Détection des candidatures potentiellement en doublon
+- Modifications concurrentes détectées via `RowVersion` (deux onglets ouverts sur la même candidature)
 
 ## Architecture
 
-Le projet démarre en architecture simple (un seul projet MVC) puis évoluera vers une séparation en couches :
+Un seul projet MVC, structuré par responsabilité :
 
 ```
 CareerTrack/
-├── Controllers/
-├── Data/
-├── Models/
+├── Controllers/       (dont Controllers/Api pour l'API REST)
+├── Data/               (DbContext, configurations EF Core, migrations)
+├── DTOs/
+├── Exceptions/
+├── Models/             (dont Models/Enums)
 ├── Services/
 ├── ViewModels/
 ├── Views/
 ├── wwwroot/
 ├── Program.cs
 └── appsettings.json
-```
 
-Évolution prévue vers quatre projets : `Domain`, `Application`, `Infrastructure`, `Web`.
+tests/
+├── CareerTrack.UnitTests/
+└── CareerTrack.IntegrationTests/
+```
 
 ## Technologies
 
-- C# / .NET
-- ASP.NET Core MVC
-- Entity Framework Core
-- SQL Server
+- C# / .NET 10
+- ASP.NET Core MVC + API REST
+- Entity Framework Core / SQL Server
 - ASP.NET Core Identity
-- Bootstrap
-- xUnit (tests)
-- Docker *(à venir)*
+- Bootstrap, Chart.js
+- xUnit, FluentAssertions
+- Docker, GitHub Actions (CI)
 
 ## Modèle de données
 
-Entités principales : `ApplicationUser`, `Company`, `JobOffer`, `JobApplication`, `ApplicationStatusHistory`, `FollowUp`, `Interview`, `Contact`, `Document`, `Note`, `Skill`.
+Entités principales : `ApplicationUser`, `Company`, `JobOffer`, `JobApplication`, `ApplicationStatusHistory`, `FollowUp`, `Interview`, `Contact`, `ApplicationDocument`.
 
-## Installation
+## Installation (développement local)
 
 ```bash
-git clone https://github.com/<ton-utilisateur>/careertrack-dotnet.git
-cd careertrack-dotnet
-dotnet restore
+git clone https://github.com/LeuzThiam/CareerTrack.git
+cd CareerTrack
+dotnet restore CareerTrack.slnx
 ```
+
+Nécessite SQL Server LocalDB (installé avec Visual Studio) ou toute instance SQL Server accessible.
 
 ## Configuration
 
-Configurer la chaîne de connexion dans `appsettings.Development.json` ou via `dotnet user-secrets`.
+La chaîne de connexion de développement est définie dans `CareerTrack/appsettings.Development.json`. Pour un déploiement, fournir `ConnectionStrings__DefaultConnection` via variable d'environnement plutôt que dans un fichier commité.
 
 ## Migrations
 
 ```bash
-dotnet ef migrations add InitialCreate
+cd CareerTrack
+dotnet ef migrations add NomDeLaMigration
 dotnet ef database update
 ```
 
 ## Tests
 
 ```bash
-dotnet test
+dotnet test CareerTrack.slnx
 ```
+
+31 tests (unitaires + intégration), exécutés automatiquement en CI sur chaque push/PR vers `develop`.
+
+## Docker
+
+```bash
+cp .env.example .env   # ajuste DB_PASSWORD
+docker compose up -d --build
+```
+
+L'application sera accessible sur `http://localhost:8080`. Les migrations sont appliquées automatiquement au démarrage du conteneur (`APPLY_MIGRATIONS_ON_STARTUP=true`, voir `docker-compose.yml`) — en dehors de Docker, les migrations restent appliquées manuellement et revues avant déploiement.
+
+```bash
+docker compose down -v   # arrête et supprime les volumes (données perdues)
+```
+
+## API REST
+
+- `GET /api/applications` — liste des candidatures de l'utilisateur courant
+- `GET /api/applications/{id}` — détail d'une candidature
+- `GET /openapi/v1.json` — spécification OpenAPI (Development uniquement)
+
+Authentifiée par le même cookie que l'interface web (pas de jeton API dédié pour l'instant).
+
+## Workflow Git
+
+Le développement se fait sur `develop` (branches `feature/*` fusionnées via PR). `main` n'est mise à jour qu'explicitement, une fois une version stabilisée.
 
 ## Statut du projet
 
-🚧 En développement — Phase 3 (initialisation) complétée. Voir la feuille de route interne pour les phases suivantes.
+✅ Version 3 complète (authentification, CRUD complet, historique, relances, entrevues, contacts, documents, tableau de bord, recherche avancée, tests automatisés, export/API, conteneurisation Docker).
 
-## Limites actuelles (V1)
+## Limites actuelles
 
-- Pas encore d'application mobile
-- Pas encore d'IA / suggestions automatiques
-- Pas encore d'import automatique depuis Indeed
-- Pas encore de microservices
+- Pas d'application mobile
+- Pas de suggestions automatiques (IA)
+- Pas d'import automatique depuis Indeed
+- Pas de paiement ni de système multi-organisation
+- API en lecture seule, authentifiée par cookie plutôt que par jeton dédié
+- Pas encore de déploiement cloud automatisé (Azure App Service, etc.)
 
 ## Évolutions futures
 
-- API REST + Swagger
-- Docker + CI/CD (GitHub Actions)
-- Déploiement Azure
+- Déploiement automatisé (Azure App Service / Container Apps)
+- Export Excel multi-feuilles
+- API complète (création/modification) avec authentification par jeton
 - Fonctionnalités intelligentes (suggestions de relance, comparaison CV/offre)
