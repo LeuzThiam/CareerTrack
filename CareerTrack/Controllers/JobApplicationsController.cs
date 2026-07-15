@@ -1,3 +1,4 @@
+using System.Text;
 using CareerTrack.Data;
 using CareerTrack.Exceptions;
 using CareerTrack.Models;
@@ -116,6 +117,59 @@ public class JobApplicationsController : Controller
             .ToListAsync(cancellationToken);
 
         return View(criteria);
+    }
+
+    // Export CSV (section 81) : uniquement les données de l'utilisateur courant.
+    public async Task<IActionResult> ExportCsv(CancellationToken cancellationToken)
+    {
+        var applications = await _context.Applications
+            .AsNoTracking()
+            .Include(a => a.Company)
+            .Where(a => a.UserId == _currentUser.UserId)
+            .OrderByDescending(a => a.UpdatedAt)
+            .Select(a => new
+            {
+                a.Company.Name,
+                a.JobTitle,
+                a.AppliedOn,
+                a.Status,
+                a.Source,
+                a.ExpectedSalary,
+                a.CurrencyCode,
+                a.Notes,
+                FollowUpCount = _context.FollowUps.Count(f => f.ApplicationId == a.Id),
+                InterviewCount = _context.Interviews.Count(i => i.ApplicationId == a.Id)
+            })
+            .ToListAsync(cancellationToken);
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Entreprise,Poste,Date,Statut,Source,Salaire,Devise,Relances,Entrevues,Notes");
+
+        foreach (var application in applications)
+        {
+            csv.AppendLine(string.Join(",",
+                CsvField(application.Name),
+                CsvField(application.JobTitle),
+                CsvField(application.AppliedOn?.ToString("yyyy-MM-dd")),
+                CsvField(application.Status.ToString()),
+                CsvField(application.Source.ToString()),
+                CsvField(application.ExpectedSalary?.ToString()),
+                CsvField(application.CurrencyCode),
+                CsvField(application.FollowUpCount.ToString()),
+                CsvField(application.InterviewCount.ToString()),
+                CsvField(application.Notes)));
+        }
+
+        byte[] bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray();
+        return File(bytes, "text/csv", $"candidatures-{DateOnly.FromDateTime(DateTime.UtcNow):yyyy-MM-dd}.csv");
+    }
+
+    private static string CsvField(string? value)
+    {
+        value ??= string.Empty;
+        return value.Contains(',') || value.Contains('"') || value.Contains('\n')
+            ? $"\"{value.Replace("\"", "\"\"")}\""
+            : value;
     }
 
     public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken)

@@ -33,6 +33,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -50,7 +51,13 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
 app.MapStaticAssets();
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
