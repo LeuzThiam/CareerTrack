@@ -25,4 +25,5 @@ jobs:
       - name: Build
         run: dotnet build CareerTrack.slnx --no-restore --configuration Release
 
-      # L'étape de test sera ajoutée à la Phase 14, quand les projets de tests existeront.
+      - name: Test
+        run: dotnet test CareerTrack.slnx --no-build --configuration Release --verbosity normal

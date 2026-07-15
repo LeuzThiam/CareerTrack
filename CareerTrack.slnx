@@ -1,3 +1,7 @@
 <Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/CareerTrack.IntegrationTests/CareerTrack.IntegrationTests.csproj" />
+    <Project Path="tests/CareerTrack.UnitTests/CareerTrack.UnitTests.csproj" />
+  </Folder>
   <Project Path="CareerTrack/CareerTrack.csproj" />
 </Solution>
