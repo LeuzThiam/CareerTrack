@@ -1,4 +1,4 @@
-@model List<JobApplication>
+@model JobApplicationSearchViewModel
 
 @{
     ViewData["Title"] = "Candidatures";
@@ -12,21 +12,48 @@
 
 <form asp-action="Index" method="get" class="row g-2 mb-3">
     <div class="col-auto">
-        <input type="text" name="search" value="@ViewData["Search"]" class="form-control" placeholder="Titre ou entreprise..." />
+        <input type="text" name="Search" value="@Model.Search" class="form-control" placeholder="Titre ou entreprise..." />
     </div>
     <div class="col-auto">
-        <select name="status" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.ApplicationStatus>()">
+        <select name="CompanyId" class="form-select" asp-items="@(new SelectList(Model.AvailableCompanies, "Id", "Name", Model.CompanyId))">
+            <option value="">-- Toutes les entreprises --</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="Status" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.ApplicationStatus>()" asp-for="Status">
             <option value="">-- Tous les statuts --</option>
         </select>
     </div>
     <div class="col-auto">
+        <select name="Priority" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.ApplicationPriority>()" asp-for="Priority">
+            <option value="">-- Toutes priorités --</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="Source" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.JobSource>()" asp-for="Source">
+            <option value="">-- Toutes sources --</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <input type="date" name="FromDate" value="@Model.FromDate" class="form-control" title="Date d'envoi min." />
+    </div>
+    <div class="col-auto">
+        <input type="date" name="ToDate" value="@Model.ToDate" class="form-control" title="Date d'envoi max." />
+    </div>
+    <div class="col-auto">
+        <select name="SortBy" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.ViewModels.ApplicationSortBy>()" asp-for="SortBy"></select>
+    </div>
+    <div class="col-auto">
         <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+        <a asp-action="Index" class="btn btn-link">Réinitialiser</a>
     </div>
 </form>
 
-@if (!Model.Any())
+<p class="text-muted">@Model.Results.TotalCount résultat(s)</p>
+
+@if (!Model.Results.Items.Any())
 {
-    <p>Aucune candidature enregistrée.</p>
+    <p>Aucune candidature ne correspond aux critères.</p>
 }
 else
 {
@@ -42,11 +69,11 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var application in Model)
+            @foreach (var application in Model.Results.Items)
             {
                 <tr>
                     <td>@application.JobTitle</td>
-                    <td>@application.Company.Name</td>
+                    <td>@application.CompanyName</td>
                     <td>@application.Status</td>
                     <td>@application.Priority</td>
                     <td>@application.AppliedOn</td>
@@ -58,4 +85,28 @@ else
             }
         </tbody>
     </table>
+
+    <nav>
+        <ul class="pagination">
+            <li class="page-item @(Model.Results.HasPreviousPage ? "" : "disabled")">
+                <a class="page-link" asp-action="Index"
+                   asp-route-Search="@Model.Search" asp-route-CompanyId="@Model.CompanyId"
+                   asp-route-Status="@Model.Status" asp-route-Priority="@Model.Priority"
+                   asp-route-Source="@Model.Source" asp-route-FromDate="@Model.FromDate"
+                   asp-route-ToDate="@Model.ToDate" asp-route-SortBy="@Model.SortBy"
+                   asp-route-PageNumber="@(Model.Results.PageNumber - 1)">Précédent</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Page @Model.Results.PageNumber / @Math.Max(1, Model.Results.TotalPages)</span>
+            </li>
+            <li class="page-item @(Model.Results.HasNextPage ? "" : "disabled")">
+                <a class="page-link" asp-action="Index"
+                   asp-route-Search="@Model.Search" asp-route-CompanyId="@Model.CompanyId"
+                   asp-route-Status="@Model.Status" asp-route-Priority="@Model.Priority"
+                   asp-route-Source="@Model.Source" asp-route-FromDate="@Model.FromDate"
+                   asp-route-ToDate="@Model.ToDate" asp-route-SortBy="@Model.SortBy"
+                   asp-route-PageNumber="@(Model.Results.PageNumber + 1)">Suivant</a>
+            </li>
+        </ul>
+    </nav>
 }
