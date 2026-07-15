@@ -1,0 +1,230 @@
+@model DashboardViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Tableau de bord";
+}
+
+<h1>Tableau de bord</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3">@Model.TotalApplications</div>
+                <div class="text-muted small">Candidatures totales</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3">@Model.ActiveApplications</div>
+                <div class="text-muted small">Candidatures actives</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3">@Model.FollowUpsDueTodayOrOverdue</div>
+                <div class="text-muted small">Relances à faire</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3">@Model.UpcomingInterviewsCount</div>
+                <div class="text-muted small">Entrevues à venir</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3">@Model.ResponsesReceived</div>
+                <div class="text-muted small">Réponses reçues</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-3">@Model.OffersReceived</div>
+                <div class="text-muted small">Offres reçues</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4">@Model.ResponseRate %</div>
+                <div class="text-muted small">Taux de réponse</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4">@Model.InterviewRate %</div>
+                <div class="text-muted small">Taux d'entrevue</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4">@Model.OfferRate %</div>
+                <div class="text-muted small">Taux d'offre</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="fs-4">@Model.RejectionRate %</div>
+                <div class="text-muted small">Taux de refus</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <h5>Candidatures par statut</h5>
+        <canvas id="statusChart" height="200"></canvas>
+    </div>
+    <div class="col-md-6">
+        <h5>Candidatures par source</h5>
+        <canvas id="sourceChart" height="200"></canvas>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <h5>Entrevues à venir</h5>
+        @if (!Model.UpcomingInterviews.Any())
+        {
+            <p class="text-muted">Aucune entrevue à venir.</p>
+        }
+        else
+        {
+            <ul class="list-group mb-4">
+                @foreach (var interview in Model.UpcomingInterviews)
+                {
+                    <li class="list-group-item">
+                        <a asp-controller="JobApplications" asp-action="Details" asp-route-id="@interview.ApplicationId">
+                            @interview.Application.JobTitle — @interview.Application.Company.Name
+                        </a>
+                        <span class="text-muted"> — @interview.Type — @interview.ScheduledAt.ToLocalTime()</span>
+                    </li>
+                }
+            </ul>
+        }
+
+        <h5>Offres dont la date limite approche</h5>
+        @if (!Model.OffersClosingSoon.Any())
+        {
+            <p class="text-muted">Aucune offre avec date limite proche.</p>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var offer in Model.OffersClosingSoon)
+                {
+                    <li class="list-group-item">
+                        <a asp-controller="JobOffers" asp-action="Details" asp-route-id="@offer.Id">
+                            @offer.Title — @offer.Company.Name
+                        </a>
+                        <span class="text-muted"> — limite le @offer.ClosingDate</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+    <div class="col-md-6">
+        <h5>Relances en retard</h5>
+        @if (!Model.FollowUpsOverdue.Any())
+        {
+            <p class="text-muted">Aucune relance en retard.</p>
+        }
+        else
+        {
+            <ul class="list-group mb-4">
+                @foreach (var followUp in Model.FollowUpsOverdue)
+                {
+                    <li class="list-group-item list-group-item-danger">
+                        <a asp-controller="JobApplications" asp-action="Details" asp-route-id="@followUp.ApplicationId">
+                            @followUp.Application.JobTitle — @followUp.Application.Company.Name
+                        </a>
+                        <span class="text-muted"> — prévue le @followUp.ScheduledAt.ToLocalTime()</span>
+                    </li>
+                }
+            </ul>
+        }
+
+        <h5>Relances du jour</h5>
+        @if (!Model.FollowUpsToday.Any())
+        {
+            <p class="text-muted">Aucune relance aujourd'hui.</p>
+        }
+        else
+        {
+            <ul class="list-group mb-4">
+                @foreach (var followUp in Model.FollowUpsToday)
+                {
+                    <li class="list-group-item">
+                        <a asp-controller="JobApplications" asp-action="Details" asp-route-id="@followUp.ApplicationId">
+                            @followUp.Application.JobTitle — @followUp.Application.Company.Name
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+
+        <h5>Candidatures sans activité récente</h5>
+        @if (!Model.StaleApplications.Any())
+        {
+            <p class="text-muted">Aucune candidature stagnante.</p>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var application in Model.StaleApplications)
+                {
+                    <li class="list-group-item">
+                        <a asp-controller="JobApplications" asp-action="Details" asp-route-id="@application.Id">
+                            @application.JobTitle — @application.Company.Name
+                        </a>
+                        <span class="text-muted"> — dernière activité le @application.UpdatedAt.ToLocalTime().ToString("d")</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        const statusLabels = @Html.Raw(JsonSerializer.Serialize(Model.ApplicationsByStatus.Keys.Select(k => k.ToString())));
+        const statusData = @Html.Raw(JsonSerializer.Serialize(Model.ApplicationsByStatus.Values));
+        const sourceLabels = @Html.Raw(JsonSerializer.Serialize(Model.ApplicationsBySource.Keys.Select(k => k.ToString())));
+        const sourceData = @Html.Raw(JsonSerializer.Serialize(Model.ApplicationsBySource.Values));
+
+        new Chart(document.getElementById('statusChart'), {
+            type: 'bar',
+            data: { labels: statusLabels, datasets: [{ label: 'Candidatures', data: statusData, backgroundColor: '#0d6efd' }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        new Chart(document.getElementById('sourceChart'), {
+            type: 'pie',
+            data: { labels: sourceLabels, datasets: [{ data: sourceData }] }
+        });
+    </script>
+}
