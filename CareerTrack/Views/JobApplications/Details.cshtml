@@ -9,6 +9,8 @@
     var interviews = (List<Interview>)ViewData["Interviews"]!;
     var newInterview = (InterviewFormViewModel)ViewData["NewInterview"]!;
     var interviewError = TempData["InterviewError"] as string;
+    var documents = (List<ApplicationDocument>)ViewData["Documents"]!;
+    var documentError = TempData["DocumentError"] as string;
 }
 
 <h1>@Model.JobTitle</h1>
@@ -254,5 +256,64 @@ else
     </div>
     <div class="col-auto">
         <button type="submit" class="btn btn-primary">Planifier</button>
+    </div>
+</form>
+
+<hr />
+
+<h3>Documents</h3>
+
+@if (!string.IsNullOrEmpty(documentError))
+{
+    <div class="alert alert-danger">@documentError</div>
+}
+
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Type</th>
+            <th>Taille</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var document in documents)
+        {
+            <tr>
+                <td>@document.OriginalFileName</td>
+                <td>@document.Type</td>
+                <td>@(document.SizeInBytes / 1024) Ko</td>
+                <td>
+                    <a asp-controller="Documents" asp-action="Download" asp-route-id="@document.Id">Télécharger</a>
+                    <form asp-controller="Documents" asp-action="Delete" method="post" class="d-inline"
+                          onsubmit="return confirm('Supprimer ce document ?');">
+                        <input type="hidden" name="id" value="@document.Id" />
+                        <input type="hidden" name="applicationId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        @if (!documents.Any())
+        {
+            <tr><td colspan="4" class="text-muted">Aucun document joint.</td></tr>
+        }
+    </tbody>
+</table>
+
+<h5>Joindre un document</h5>
+<form asp-controller="Documents" asp-action="Upload" method="post" enctype="multipart/form-data" class="row g-2 align-items-end mb-4" style="max-width: 700px;">
+    <input type="hidden" name="applicationId" value="@Model.Id" />
+    <div class="col-auto">
+        <label class="form-label">Type</label>
+        <select name="type" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.DocumentType>()"></select>
+    </div>
+    <div class="col-auto">
+        <label class="form-label">Fichier</label>
+        <input type="file" name="file" class="form-control" accept=".pdf,.docx,.txt,.png,.jpg" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Téléverser</button>
     </div>
 </form>

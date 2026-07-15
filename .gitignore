@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Documents téléversés par les utilisateurs (stockage local de développement)
+CareerTrack/App_Data/Uploads/
+
 # User-specific files
 *.rsuser
 *.suo

@@ -86,11 +86,18 @@ public class JobApplicationsController : Controller
             .OrderBy(i => i.ScheduledAt)
             .ToListAsync(cancellationToken);
 
+        List<ApplicationDocument> documents = await _context.Documents
+            .AsNoTracking()
+            .Where(d => d.ApplicationId == application.Id)
+            .OrderByDescending(d => d.UploadedAt)
+            .ToListAsync(cancellationToken);
+
         ViewData["ChangeStatus"] = changeStatusModel;
         ViewData["FollowUps"] = followUps;
         ViewData["NewFollowUp"] = new FollowUpFormViewModel { ApplicationId = application.Id };
         ViewData["Interviews"] = interviews;
         ViewData["NewInterview"] = new InterviewFormViewModel { ApplicationId = application.Id };
+        ViewData["Documents"] = documents;
 
         return View(application);
     }

@@ -20,6 +20,7 @@ public class ApplicationDbContext
     public DbSet<FollowUp> FollowUps => Set<FollowUp>();
     public DbSet<Interview> Interviews => Set<Interview>();
     public DbSet<Contact> Contacts => Set<Contact>();
+    public DbSet<ApplicationDocument> Documents => Set<ApplicationDocument>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
