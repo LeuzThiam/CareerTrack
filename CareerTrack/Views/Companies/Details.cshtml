@@ -1,0 +1,35 @@
+@model Company
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<h1>@Model.Name</h1>
+
+<dl class="row">
+    <dt class="col-sm-2">Secteur</dt>
+    <dd class="col-sm-10">@Model.Industry</dd>
+
+    <dt class="col-sm-2">Site web</dt>
+    <dd class="col-sm-10">@Model.WebsiteUrl</dd>
+
+    <dt class="col-sm-2">Ville</dt>
+    <dd class="col-sm-10">@Model.City</dd>
+
+    <dt class="col-sm-2">Province</dt>
+    <dd class="col-sm-10">@Model.Province</dd>
+
+    <dt class="col-sm-2">Pays</dt>
+    <dd class="col-sm-10">@Model.Country</dd>
+
+    <dt class="col-sm-2">Notes</dt>
+    <dd class="col-sm-10">@Model.Notes</dd>
+</dl>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">Modifier</a>
+<a asp-action="Index" class="btn btn-link">Retour à la liste</a>
+
+<form asp-action="Archive" asp-route-id="@Model.Id" method="post" class="d-inline"
+      onsubmit="return confirm('Archiver cette entreprise ?');">
+    <button type="submit" class="btn btn-outline-danger">Archiver</button>
+</form>

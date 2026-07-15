@@ -13,8 +13,11 @@ public class ApplicationDbContext
     {
     }
 
+    public DbSet<Company> Companies => Set<Company>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }
