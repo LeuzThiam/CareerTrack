@@ -19,6 +19,7 @@ public class ApplicationDbContext
     public DbSet<ApplicationStatusHistory> ApplicationStatusHistories => Set<ApplicationStatusHistory>();
     public DbSet<FollowUp> FollowUps => Set<FollowUp>();
     public DbSet<Interview> Interviews => Set<Interview>();
+    public DbSet<Contact> Contacts => Set<Contact>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

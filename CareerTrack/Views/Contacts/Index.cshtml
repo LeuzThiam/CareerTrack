@@ -1,0 +1,52 @@
+@model List<Contact>
+
+@{
+    ViewData["Title"] = "Contacts";
+}
+
+<h1>Contacts</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Ajouter un contact</a>
+</p>
+
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="input-group" style="max-width: 400px;">
+        <input type="text" name="search" value="@ViewData["Search"]" class="form-control" placeholder="Rechercher un nom ou une entreprise..." />
+        <button type="submit" class="btn btn-outline-secondary">Rechercher</button>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <p>Aucun contact enregistré.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Entreprise</th>
+                <th>Poste</th>
+                <th>Courriel</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contact in Model)
+            {
+                <tr>
+                    <td>@contact.FirstName @contact.LastName</td>
+                    <td>@contact.Company.Name</td>
+                    <td>@contact.JobTitle</td>
+                    <td>@contact.Email</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@contact.Id">Détails</a> |
+                        <a asp-action="Edit" asp-route-id="@contact.Id">Modifier</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
