@@ -10,13 +10,16 @@ public class AccountController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager)
+        SignInManager<ApplicationUser> signInManager,
+        ILogger<AccountController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -58,6 +61,8 @@ public class AccountController : Controller
         await _userManager.AddToRoleAsync(user, AppRoleSeeder.Roles[0]);
         await _signInManager.SignInAsync(user, isPersistent: false);
 
+        _logger.LogInformation("Nouveau compte créé pour {Email} (UserId {UserId})", user.Email, user.Id);
+
         return RedirectToAction("Index", "Home");
     }
 
@@ -84,9 +89,13 @@ public class AccountController : Controller
 
         if (!result.Succeeded)
         {
+            // Ne jamais journaliser le mot de passe — seul le courriel identifie la tentative.
+            _logger.LogWarning("Échec de connexion pour {Email}", model.Email);
             ModelState.AddModelError(string.Empty, "Courriel ou mot de passe invalide.");
             return View(model);
         }
+
+        _logger.LogInformation("Connexion réussie pour {Email}", model.Email);
 
         if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
         {

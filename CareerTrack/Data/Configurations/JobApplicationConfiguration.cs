@@ -24,6 +24,10 @@ public class JobApplicationConfiguration : IEntityTypeConfiguration<JobApplicati
         builder.Property(application => application.Priority).HasConversion<int>();
         builder.Property(application => application.Source).HasConversion<int>();
 
+        // Détecte les modifications concurrentes (section 84) : deux onglets ouverts sur
+        // la même candidature, le second à enregistrer ses changements se fait rejeter.
+        builder.Property(application => application.RowVersion).IsRowVersion();
+
         builder.HasOne(application => application.User)
             .WithMany()
             .HasForeignKey(application => application.UserId)

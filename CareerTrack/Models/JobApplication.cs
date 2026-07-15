@@ -20,6 +20,7 @@ public class JobApplication
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public DateTimeOffset? ArchivedAt { get; set; }
+    public byte[] RowVersion { get; set; } = [];
 
     public ApplicationUser User { get; set; } = null!;
     public Company Company { get; set; } = null!;
