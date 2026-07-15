@@ -1,0 +1,19 @@
+@model FollowUpsOverviewViewModel
+
+@{
+    ViewData["Title"] = "Relances";
+}
+
+<h1>Relances</h1>
+
+<h3 class="text-danger">En retard (@Model.Overdue.Count)</h3>
+@await Html.PartialAsync("_FollowUpTable", Model.Overdue)
+
+<h3 class="mt-4">Aujourd'hui (@Model.Today.Count)</h3>
+@await Html.PartialAsync("_FollowUpTable", Model.Today)
+
+<h3 class="mt-4">À venir (@Model.Upcoming.Count)</h3>
+@await Html.PartialAsync("_FollowUpTable", Model.Upcoming)
+
+<h3 class="mt-4 text-muted">Terminées récemment</h3>
+@await Html.PartialAsync("_FollowUpTable", Model.Completed)
