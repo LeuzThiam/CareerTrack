@@ -66,6 +66,18 @@ app.MapControllerRoute(
 
 app.MapHealthChecks("/health");
 
+// Hors développement, les migrations doivent normalement être revues puis appliquées
+// manuellement (section 56 du cahier des charges). Le conteneur Docker n'embarque pas
+// les outils EF Core ; APPLY_MIGRATIONS_ON_STARTUP=true offre un chemin explicite pour
+// les environnements de démonstration où ce contrôle manuel n'est pas nécessaire.
+if (app.Configuration.GetValue<bool>("APPLY_MIGRATIONS_ON_STARTUP"))
+{
+    using IServiceScope migrationScope = app.Services.CreateScope();
+    await migrationScope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>()
+        .Database.MigrateAsync();
+}
+
 await AppRoleSeeder.SeedAsync(app.Services);
 
 app.Run();
