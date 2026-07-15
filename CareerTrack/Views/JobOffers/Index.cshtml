@@ -1,0 +1,52 @@
+@model List<JobOffer>
+
+@{
+    ViewData["Title"] = "Offres d'emploi";
+}
+
+<h1>Offres d'emploi</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Ajouter une offre</a>
+</p>
+
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="input-group" style="max-width: 400px;">
+        <input type="text" name="search" value="@ViewData["Search"]" class="form-control" placeholder="Rechercher un titre ou une entreprise..." />
+        <button type="submit" class="btn btn-outline-secondary">Rechercher</button>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <p>Aucune offre enregistrée.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Titre</th>
+                <th>Entreprise</th>
+                <th>Statut</th>
+                <th>Date limite</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var offer in Model)
+            {
+                <tr>
+                    <td>@offer.Title</td>
+                    <td>@offer.Company.Name</td>
+                    <td>@offer.Status</td>
+                    <td>@offer.ClosingDate</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@offer.Id">Détails</a> |
+                        <a asp-action="Edit" asp-route-id="@offer.Id">Modifier</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

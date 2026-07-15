@@ -14,6 +14,7 @@ public class ApplicationDbContext
     }
 
     public DbSet<Company> Companies => Set<Company>();
+    public DbSet<JobOffer> JobOffers => Set<JobOffer>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
