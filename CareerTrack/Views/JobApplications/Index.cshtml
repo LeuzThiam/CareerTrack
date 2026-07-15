@@ -1,0 +1,61 @@
+@model List<JobApplication>
+
+@{
+    ViewData["Title"] = "Candidatures";
+}
+
+<h1>Candidatures</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Ajouter une candidature</a>
+</p>
+
+<form asp-action="Index" method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <input type="text" name="search" value="@ViewData["Search"]" class="form-control" placeholder="Titre ou entreprise..." />
+    </div>
+    <div class="col-auto">
+        <select name="status" class="form-select" asp-items="Html.GetEnumSelectList<CareerTrack.Models.Enums.ApplicationStatus>()">
+            <option value="">-- Tous les statuts --</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <p>Aucune candidature enregistrée.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Poste</th>
+                <th>Entreprise</th>
+                <th>Statut</th>
+                <th>Priorité</th>
+                <th>Date d'envoi</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var application in Model)
+            {
+                <tr>
+                    <td>@application.JobTitle</td>
+                    <td>@application.Company.Name</td>
+                    <td>@application.Status</td>
+                    <td>@application.Priority</td>
+                    <td>@application.AppliedOn</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@application.Id">Détails</a> |
+                        <a asp-action="Edit" asp-route-id="@application.Id">Modifier</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
