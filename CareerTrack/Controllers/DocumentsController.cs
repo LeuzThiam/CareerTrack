@@ -17,17 +17,20 @@ public class DocumentsController : Controller
     private readonly ICurrentUserService _currentUser;
     private readonly IFileStorageService _fileStorage;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         ApplicationDbContext context,
         ICurrentUserService currentUser,
         IFileStorageService fileStorage,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<DocumentsController> logger)
     {
         _context = context;
         _currentUser = currentUser;
         _fileStorage = fileStorage;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -86,6 +89,11 @@ public class DocumentsController : Controller
         _context.Documents.Add(document);
         await _context.SaveChangesAsync(cancellationToken);
 
+        // On journalise le nom original et la taille, jamais le contenu du document (Règle 69).
+        _logger.LogInformation(
+            "Document {DocumentId} ({FileName}, {SizeInBytes} octets) téléversé par {UserId} pour la candidature {ApplicationId}",
+            document.Id, document.OriginalFileName, document.SizeInBytes, _currentUser.UserId, applicationId);
+
         return RedirectToAction(nameof(JobApplicationsController.Details), "JobApplications", new { id = applicationId });
     }
 
@@ -119,6 +127,10 @@ public class DocumentsController : Controller
         _fileStorage.Delete(document.StoredFileName);
         _context.Documents.Remove(document);
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Document {DocumentId} supprimé par {UserId}",
+            document.Id, _currentUser.UserId);
 
         return RedirectToAction(nameof(JobApplicationsController.Details), "JobApplications", new { id = applicationId });
     }

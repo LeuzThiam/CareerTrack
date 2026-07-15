@@ -16,11 +16,16 @@ public class JobApplicationsController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILogger<JobApplicationsController> _logger;
 
-    public JobApplicationsController(ApplicationDbContext context, ICurrentUserService currentUser)
+    public JobApplicationsController(
+        ApplicationDbContext context,
+        ICurrentUserService currentUser,
+        ILogger<JobApplicationsController> logger)
     {
         _context = context;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index([FromQuery] JobApplicationSearchViewModel criteria, CancellationToken cancellationToken)
@@ -212,6 +217,10 @@ public class JobApplicationsController : Controller
         _context.Applications.Add(application);
         await _context.SaveChangesAsync(cancellationToken);
 
+        _logger.LogInformation(
+            "Candidature {ApplicationId} créée par l'utilisateur {UserId}",
+            application.Id, _currentUser.UserId);
+
         return RedirectToAction(nameof(Details), new { id = application.Id });
     }
 
@@ -228,6 +237,7 @@ public class JobApplicationsController : Controller
         var model = new JobApplicationFormViewModel
         {
             Id = application.Id,
+            RowVersion = application.RowVersion,
             CompanyId = application.CompanyId,
             JobOfferId = application.JobOfferId,
             JobTitle = application.JobTitle,
@@ -284,7 +294,23 @@ public class JobApplicationsController : Controller
         application.Notes = model.Notes?.Trim();
         application.UpdatedAt = DateTimeOffset.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        // La valeur soumise par le formulaire représente l'état connu de l'utilisateur ;
+        // si un autre onglet a modifié la candidature entre-temps, le RowVersion en base
+        // ne correspondra plus et SaveChangesAsync lèvera DbUpdateConcurrencyException.
+        _context.Entry(application).Property(a => a.RowVersion).OriginalValue = model.RowVersion;
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            ModelState.AddModelError(string.Empty,
+                "Cette candidature a été modifiée depuis son ouverture. Rechargez la page avant de continuer.");
+            model.AvailableCompanies = await GetAvailableCompaniesAsync(cancellationToken);
+            model.AvailableJobOffers = await GetAvailableJobOffersAsync(cancellationToken);
+            return View(model);
+        }
 
         return RedirectToAction(nameof(Details), new { id = application.Id });
     }
@@ -338,6 +364,10 @@ public class JobApplicationsController : Controller
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        _logger.LogInformation(
+            "Candidature {ApplicationId} : statut changé vers {NewStatus} par {UserId}",
+            application.Id, model.NewStatus, _currentUser.UserId);
+
         return RedirectToAction(nameof(Details), new { id = application.Id });
     }
 
@@ -355,6 +385,10 @@ public class JobApplicationsController : Controller
 
         application.ArchivedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Candidature {ApplicationId} archivée par {UserId}",
+            application.Id, _currentUser.UserId);
 
         return RedirectToAction(nameof(Index));
     }

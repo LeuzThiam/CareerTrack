@@ -7,6 +7,10 @@ public class JobApplicationFormViewModel
 {
     public Guid? Id { get; set; }
 
+    // Capturée au chargement du formulaire pour détecter les modifications
+    // concurrentes (section 84) ; renvoyée telle quelle par un champ caché.
+    public byte[] RowVersion { get; set; } = [];
+
     [Required]
     [Display(Name = "Entreprise")]
     public Guid CompanyId { get; set; }
