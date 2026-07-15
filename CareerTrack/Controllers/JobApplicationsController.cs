@@ -23,33 +23,94 @@ public class JobApplicationsController : Controller
         _currentUser = currentUser;
     }
 
-    public async Task<IActionResult> Index(string? search, ApplicationStatus? status, CancellationToken cancellationToken)
+    public async Task<IActionResult> Index([FromQuery] JobApplicationSearchViewModel criteria, CancellationToken cancellationToken)
     {
+        criteria.PageNumber = Math.Max(1, criteria.PageNumber);
+        criteria.PageSize = criteria.PageSize is > 0 and <= 100 ? criteria.PageSize : 10;
+
         IQueryable<JobApplication> query = _context.Applications
             .AsNoTracking()
-            .Include(application => application.Company)
             .Where(application => application.UserId == _currentUser.UserId);
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(criteria.Search))
         {
-            string term = search.Trim();
+            string term = criteria.Search.Trim();
             query = query.Where(application =>
                 application.JobTitle.Contains(term) || application.Company.Name.Contains(term));
         }
 
-        if (status.HasValue)
+        if (criteria.CompanyId.HasValue)
         {
-            query = query.Where(application => application.Status == status.Value);
+            query = query.Where(application => application.CompanyId == criteria.CompanyId.Value);
         }
 
-        List<JobApplication> applications = await query
-            .OrderByDescending(application => application.UpdatedAt)
+        if (criteria.Status.HasValue)
+        {
+            query = query.Where(application => application.Status == criteria.Status.Value);
+        }
+
+        if (criteria.Priority.HasValue)
+        {
+            query = query.Where(application => application.Priority == criteria.Priority.Value);
+        }
+
+        if (criteria.Source.HasValue)
+        {
+            query = query.Where(application => application.Source == criteria.Source.Value);
+        }
+
+        if (criteria.FromDate.HasValue)
+        {
+            query = query.Where(application => application.AppliedOn >= criteria.FromDate.Value);
+        }
+
+        if (criteria.ToDate.HasValue)
+        {
+            query = query.Where(application => application.AppliedOn <= criteria.ToDate.Value);
+        }
+
+        query = criteria.SortBy switch
+        {
+            ApplicationSortBy.AppliedOnDesc => query.OrderByDescending(a => a.AppliedOn),
+            ApplicationSortBy.AppliedOnAsc => query.OrderBy(a => a.AppliedOn),
+            ApplicationSortBy.JobTitleAsc => query.OrderBy(a => a.JobTitle),
+            ApplicationSortBy.CompanyNameAsc => query.OrderBy(a => a.Company.Name),
+            ApplicationSortBy.PriorityDesc => query.OrderByDescending(a => a.Priority),
+            _ => query.OrderByDescending(a => a.UpdatedAt)
+        };
+
+        int totalCount = await query.CountAsync(cancellationToken);
+
+        List<JobApplicationListItemViewModel> items = await query
+            .Skip((criteria.PageNumber - 1) * criteria.PageSize)
+            .Take(criteria.PageSize)
+            .Select(a => new JobApplicationListItemViewModel
+            {
+                Id = a.Id,
+                JobTitle = a.JobTitle,
+                CompanyName = a.Company.Name,
+                Status = a.Status,
+                Priority = a.Priority,
+                AppliedOn = a.AppliedOn
+            })
             .ToListAsync(cancellationToken);
 
-        ViewData["Search"] = search;
-        ViewData["Status"] = status;
+        criteria.Results = new PagedResult<JobApplicationListItemViewModel>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = criteria.PageNumber,
+            PageSize = criteria.PageSize
+        };
 
-        return View(applications);
+        criteria.AvailableCompanies = await _context.Companies
+            .AsNoTracking()
+            .Where(c => c.UserId == _currentUser.UserId)
+            .OrderBy(c => c.Name)
+            .Select(c => new CompanyOptionViewModel { Id = c.Id, Name = c.Name })
+            .ToListAsync(cancellationToken);
+
+        return View(criteria);
     }
 
     public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken)
