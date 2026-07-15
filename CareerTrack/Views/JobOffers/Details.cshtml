@@ -1,0 +1,53 @@
+@model JobOffer
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<h1>@Model.Title</h1>
+<h5 class="text-muted">@Model.Company.Name</h5>
+
+<dl class="row mt-3">
+    <dt class="col-sm-3">Statut</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Lieu</dt>
+    <dd class="col-sm-9">@Model.Location</dd>
+
+    <dt class="col-sm-3">Mode de travail</dt>
+    <dd class="col-sm-9">@Model.WorkMode</dd>
+
+    <dt class="col-sm-3">Type de contrat</dt>
+    <dd class="col-sm-9">@Model.EmploymentType</dd>
+
+    <dt class="col-sm-3">Source</dt>
+    <dd class="col-sm-9">@Model.Source</dd>
+
+    <dt class="col-sm-3">Lien</dt>
+    <dd class="col-sm-9">@Model.SourceUrl</dd>
+
+    <dt class="col-sm-3">Salaire</dt>
+    <dd class="col-sm-9">
+        @if (Model.MinimumSalary is not null || Model.MaximumSalary is not null)
+        {
+            @($"{Model.MinimumSalary} - {Model.MaximumSalary} {Model.CurrencyCode}")
+        }
+    </dd>
+
+    <dt class="col-sm-3">Date de publication</dt>
+    <dd class="col-sm-9">@Model.PublicationDate</dd>
+
+    <dt class="col-sm-3">Date limite</dt>
+    <dd class="col-sm-9">@Model.ClosingDate</dd>
+
+    <dt class="col-sm-3">Description</dt>
+    <dd class="col-sm-9">@Model.Description</dd>
+</dl>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">Modifier</a>
+<a asp-action="Index" class="btn btn-link">Retour à la liste</a>
+
+<form asp-action="Archive" asp-route-id="@Model.Id" method="post" class="d-inline"
+      onsubmit="return confirm('Archiver cette offre ?');">
+    <button type="submit" class="btn btn-outline-danger">Archiver</button>
+</form>
