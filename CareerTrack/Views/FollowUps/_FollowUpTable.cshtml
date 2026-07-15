@@ -1,0 +1,36 @@
+@model List<FollowUp>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Aucune relance.</p>
+}
+else
+{
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Candidature</th>
+                <th>Type</th>
+                <th>Date prévue</th>
+                <th>Statut</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var followUp in Model)
+            {
+                <tr>
+                    <td>
+                        <a asp-controller="JobApplications" asp-action="Details" asp-route-id="@followUp.ApplicationId">
+                            @followUp.Application.JobTitle — @followUp.Application.Company.Name
+                        </a>
+                    </td>
+                    <td>@followUp.Type</td>
+                    <td>@followUp.ScheduledAt.ToLocalTime()</td>
+                    <td>@(followUp.IsCompleted ? $"Terminée ({followUp.Result})" : "En attente")</td>
+                    <td></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

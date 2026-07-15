@@ -74,7 +74,15 @@ public class JobApplicationsController : Controller
                 .ToList()
         };
 
+        List<FollowUp> followUps = await _context.FollowUps
+            .AsNoTracking()
+            .Where(f => f.ApplicationId == application.Id)
+            .OrderBy(f => f.ScheduledAt)
+            .ToListAsync(cancellationToken);
+
         ViewData["ChangeStatus"] = changeStatusModel;
+        ViewData["FollowUps"] = followUps;
+        ViewData["NewFollowUp"] = new FollowUpFormViewModel { ApplicationId = application.Id };
 
         return View(application);
     }
@@ -236,6 +244,22 @@ public class JobApplicationsController : Controller
         }
 
         _context.ApplicationStatusHistories.Add(historyEntry);
+
+        // Règle 13 : une candidature terminale ne doit plus générer de rappel.
+        if (ApplicationStatusTransitions.IsTerminal(model.NewStatus))
+        {
+            List<FollowUp> pendingFollowUps = await _context.FollowUps
+                .Where(f => f.ApplicationId == application.Id && !f.IsCompleted)
+                .ToListAsync(cancellationToken);
+
+            foreach (FollowUp followUp in pendingFollowUps)
+            {
+                followUp.IsCompleted = true;
+                followUp.CompletedAt = DateTimeOffset.UtcNow;
+                followUp.Result = "Annulée automatiquement (candidature terminale)";
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return RedirectToAction(nameof(Details), new { id = application.Id });
