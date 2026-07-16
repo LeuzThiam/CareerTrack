@@ -22,6 +22,7 @@ Une personne en recherche d'emploi utilise souvent plusieurs sources (Indeed, Li
 - Tableau de bord avec KPI, indicateurs et graphiques
 - Recherche, filtrage, tri et pagination des candidatures
 - Export CSV et API REST en lecture seule
+- Import Gmail via n8n : réception d'événements courriel classés par IA (côté n8n), déduplication, revue et association manuelle par l'utilisateur (aucune modification automatique des candidatures)
 - Isolation complète des données par utilisateur
 
 ## Utilisateurs
@@ -75,7 +76,7 @@ tests/
 
 ## Modèle de données
 
-Entités principales : `ApplicationUser`, `Company`, `JobOffer`, `JobApplication`, `ApplicationStatusHistory`, `FollowUp`, `Interview`, `Contact`, `ApplicationDocument`.
+Entités principales : `ApplicationUser`, `Company`, `JobOffer`, `JobApplication`, `ApplicationStatusHistory`, `FollowUp`, `Interview`, `Contact`, `ApplicationDocument`, `ImportedEmail`.
 
 ## Installation (développement local)
 
@@ -105,7 +106,7 @@ dotnet ef database update
 dotnet test CareerTrack.slnx
 ```
 
-31 tests (unitaires + intégration), exécutés automatiquement en CI sur chaque push/PR vers `develop`.
+43 tests (unitaires + intégration), exécutés automatiquement en CI sur chaque push/PR vers `develop`.
 
 ## Docker
 
@@ -128,19 +129,27 @@ docker compose down -v   # arrête et supprime les volumes (données perdues)
 
 Authentifiée par le même cookie que l'interface web (pas de jeton API dédié pour l'instant).
 
+## Intégration Gmail (n8n)
+
+- `POST /api/integrations/gmail/job-events` — reçoit un événement courriel déjà classé par un workflow n8n (Gmail → LLM → CareerTrack). Authentifié par jeton `Bearer` dédié (`GmailIntegration:Secret` / `GmailIntegration:UserId`, à fournir via variables d'environnement, jamais commités).
+- La classification (type de message, entreprise, recruteur, entrevue détectée, action suggérée) est produite entièrement côté n8n — CareerTrack ne contient aucune logique IA/LLM.
+- Chaque événement est stocké comme `ImportedEmail` "à vérifier" (jamais appliqué directement à une candidature) et déduplicé par `(UserId, Source, ExternalMessageId)`.
+- Page **Imports Gmail** (interface web, authentification cookie normale) : revue manuelle par catégorie (à vérifier / traités / ignorés / doublons / erreurs), association à une candidature existante ou ignorance — aucune action n'est automatisée en V1.
+
 ## Workflow Git
 
 Le développement se fait sur `develop` (branches `feature/*` fusionnées via PR). `main` n'est mise à jour qu'explicitement, une fois une version stabilisée.
 
 ## Statut du projet
 
-✅ Version 3 complète (authentification, CRUD complet, historique, relances, entrevues, contacts, documents, tableau de bord, recherche avancée, tests automatisés, export/API, conteneurisation Docker).
+✅ Version 3 complète (authentification, CRUD complet, historique, relances, entrevues, contacts, documents, tableau de bord, recherche avancée, tests automatisés, export/API, conteneurisation Docker, import Gmail via n8n).
 
 ## Limites actuelles
 
 - Pas d'application mobile
 - Pas de suggestions automatiques (IA)
-- Pas d'import automatique depuis Indeed
+- Pas d'import automatique depuis Indeed (l'import Gmail couvre les courriels reçus, pas le scraping de sites d'offres)
+- Import Gmail conçu pour un seul utilisateur (un jeton d'intégration statique lié à un `UserId` unique, pas une gestion multi-clés)
 - Pas de paiement ni de système multi-organisation
 - API en lecture seule, authentifiée par cookie plutôt que par jeton dédié
 - Pas encore de déploiement cloud automatisé (Azure App Service, etc.)

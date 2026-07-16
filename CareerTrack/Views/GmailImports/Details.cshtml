@@ -1,0 +1,79 @@
+@model GmailImportDetailsViewModel
+@{
+    var import = Model.Import;
+    ViewData["Title"] = import.Subject;
+}
+
+<h1>@import.Subject</h1>
+<h5 class="text-muted">De : @import.SenderName &lt;@import.SenderEmail&gt;</h5>
+
+<dl class="row mt-3">
+    <dt class="col-sm-3">Statut de traitement</dt>
+    <dd class="col-sm-9"><span class="badge bg-secondary">@import.ProcessingStatus</span></dd>
+
+    <dt class="col-sm-3">Classification</dt>
+    <dd class="col-sm-9">@import.MessageType (confiance : @((import.ConfidenceScore * 100).ToString("0")) %)</dd>
+
+    <dt class="col-sm-3">Résumé (n8n)</dt>
+    <dd class="col-sm-9">@import.Summary</dd>
+
+    <dt class="col-sm-3">Entreprise détectée</dt>
+    <dd class="col-sm-9">@import.CompanyNameDetected</dd>
+
+    <dt class="col-sm-3">Poste détecté</dt>
+    <dd class="col-sm-9">@import.JobTitleDetected</dd>
+
+    <dt class="col-sm-3">Recruteur détecté</dt>
+    <dd class="col-sm-9">@import.RecruiterNameDetected @(import.RecruiterEmailDetected is not null ? $"<{import.RecruiterEmailDetected}>" : "")</dd>
+
+    <dt class="col-sm-3">Date d'entrevue détectée</dt>
+    <dd class="col-sm-9">@import.InterviewDateDetected</dd>
+
+    <dt class="col-sm-3">Lien de rencontre détecté</dt>
+    <dd class="col-sm-9">@import.MeetingUrlDetected</dd>
+
+    <dt class="col-sm-3">Action suggérée (n8n)</dt>
+    <dd class="col-sm-9">@import.SuggestedAction @(import.SuggestedApplicationStatus is not null ? $"→ {import.SuggestedApplicationStatus}" : "")</dd>
+
+    <dt class="col-sm-3">Extrait</dt>
+    <dd class="col-sm-9"><em>"@import.ImportantExcerpt"</em></dd>
+
+    <dt class="col-sm-3">Candidature associée</dt>
+    <dd class="col-sm-9">
+        @if (import.ApplicationId.HasValue)
+        {
+            <a asp-controller="JobApplications" asp-action="Details" asp-route-id="@import.ApplicationId">Voir la candidature</a>
+        }
+        else
+        {
+            <span class="text-muted">Aucune</span>
+        }
+    </dd>
+</dl>
+
+@if (import.ProcessingStatus is EmailImportStatus.PendingReview or EmailImportStatus.Received)
+{
+    <hr />
+    <h3>Associer à une candidature</h3>
+    <form asp-action="Associate" asp-route-id="@import.Id" method="post" class="row g-2 align-items-end mb-4" style="max-width: 600px;">
+        <div class="col-auto">
+            <select name="applicationId" class="form-select">
+                <option value="">-- Choisir une candidature --</option>
+                @foreach (var option in Model.AvailableApplications)
+                {
+                    <option value="@option.Id">@option.Label</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Associer et marquer comme traité</button>
+        </div>
+    </form>
+
+    <form asp-action="Ignore" asp-route-id="@import.Id" method="post"
+          onsubmit="return confirm('Ignorer cet import ?');">
+        <button type="submit" class="btn btn-outline-secondary">Ignorer</button>
+    </form>
+}
+
+<a asp-action="Index" class="btn btn-link mt-3">Retour à la liste</a>

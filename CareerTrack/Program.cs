@@ -1,3 +1,4 @@
+using CareerTrack.Auth;
 using CareerTrack.Data;
 using CareerTrack.Models;
 using CareerTrack.Services;
@@ -28,6 +29,18 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
+
+// Schéma d'authentification distinct pour l'ingestion Gmail poussée par n8n — s'ajoute
+// au cookie Identity, ne le remplace pas (section 8 de la spec d'intégration).
+builder.Services.AddAuthentication()
+    .AddScheme<GmailIntegrationAuthenticationOptions, GmailIntegrationAuthenticationHandler>(
+        GmailIntegrationAuthenticationOptions.SchemeName,
+        options =>
+        {
+            options.Secret = builder.Configuration["GmailIntegration:Secret"] ?? string.Empty;
+            Guid.TryParse(builder.Configuration["GmailIntegration:UserId"], out Guid userId);
+            options.UserId = userId;
+        });
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();

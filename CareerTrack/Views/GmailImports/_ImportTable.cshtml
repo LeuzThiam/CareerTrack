@@ -1,0 +1,34 @@
+@model List<ImportedEmail>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Aucun import.</p>
+}
+else
+{
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Sujet</th>
+                <th>Expéditeur</th>
+                <th>Classification</th>
+                <th>Entreprise / Poste détecté</th>
+                <th>Confiance</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var import in Model)
+            {
+                <tr>
+                    <td>@import.Subject</td>
+                    <td>@import.SenderEmail</td>
+                    <td>@import.MessageType</td>
+                    <td>@import.CompanyNameDetected / @import.JobTitleDetected</td>
+                    <td>@((import.ConfidenceScore * 100).ToString("0")) %</td>
+                    <td><a asp-action="Details" asp-route-id="@import.Id">Détails</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

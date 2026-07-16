@@ -1,0 +1,23 @@
+@model GmailImportsOverviewViewModel
+
+@{
+    ViewData["Title"] = "Imports Gmail";
+}
+
+<h1>Imports Gmail</h1>
+<p class="text-muted">Courriels détectés et classés par n8n, en attente de ta validation.</p>
+
+<h3 class="mt-4">À vérifier (@Model.PendingReview.Count)</h3>
+@await Html.PartialAsync("_ImportTable", Model.PendingReview)
+
+<h3 class="mt-4">Traités (@Model.Processed.Count)</h3>
+@await Html.PartialAsync("_ImportTable", Model.Processed)
+
+<h3 class="mt-4 text-muted">Ignorés (@Model.Ignored.Count)</h3>
+@await Html.PartialAsync("_ImportTable", Model.Ignored)
+
+<h3 class="mt-4 text-muted">Doublons (@Model.Duplicates.Count)</h3>
+@await Html.PartialAsync("_ImportTable", Model.Duplicates)
+
+<h3 class="mt-4 text-danger">Erreurs (@Model.Errors.Count)</h3>
+@await Html.PartialAsync("_ImportTable", Model.Errors)

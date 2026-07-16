@@ -21,6 +21,7 @@ public class ApplicationDbContext
     public DbSet<Interview> Interviews => Set<Interview>();
     public DbSet<Contact> Contacts => Set<Contact>();
     public DbSet<ApplicationDocument> Documents => Set<ApplicationDocument>();
+    public DbSet<ImportedEmail> ImportedEmails => Set<ImportedEmail>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
